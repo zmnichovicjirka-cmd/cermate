@@ -21,7 +21,7 @@ import {
   ArrowLeft,
   User as UserIcon
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   collection, 
   query, 
@@ -100,6 +100,7 @@ const MOCK_TESTS: Test[] = [
 ];
 
 export default function App() {
+  console.log('App component rendering...');
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');

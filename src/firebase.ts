@@ -8,9 +8,13 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const auth = getAuth(app);
+const app = firebaseConfig ? initializeApp(firebaseConfig) : null;
+export const db = app ? getFirestore(app, firebaseConfig.firestoreDatabaseId) : null;
+export const auth = app ? getAuth(app) : null;
+
+if (!app) {
+  console.error("Firebase configuration missing! Check firebase-applet-config.json");
+}
 
 export enum OperationType {
   CREATE = 'create',
