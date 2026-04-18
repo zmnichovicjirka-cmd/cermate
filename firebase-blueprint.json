@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user statistics and profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "testsTaken": { "type": "number" },
+            "averageScore": { "type": "number" },
+            "totalPoints": { "type": "number" },
+            "lastActive": { "type": "string", "format": "date-time" }
+          }
+        }
+      },
+      "required": ["uid", "email"]
+    },
+    "Test": {
+      "title": "CERMAT Test",
+      "description": "Definition of a CERMAT test with questions.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subject": { "type": "string", "enum": ["MAT", "CJL"] },
+        "year": { "type": "number" },
+        "term": { "type": "string" },
+        "durationMinutes": { "type": "number" },
+        "totalPoints": { "type": "number" },
+        "questions": {
+          "type": "array",
+          "items": { "$ref": "Question" }
+        }
+      }
+    },
+    "Question": {
+      "title": "Test Question",
+      "description": "A single question within a test.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" },
+        "type": { "type": "string", "enum": ["multiple-choice", "single-choice", "open-ended"] },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "correctAnswer": { "type": "string" },
+        "points": { "type": "number" }
+      }
+    },
+    "TestResult": {
+      "title": "Test Result",
+      "description": "Result of a test taken by a user.",
+      "type": "object",
+      "properties": {
+        "testId": { "type": "string" },
+        "userId": { "type": "string" },
+        "score": { "type": "number" },
+        "maxScore": { "type": "number" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "answers": { "type": "object" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and stats."
+    },
+    "/tests/{testId}": {
+      "schema": "Test",
+      "description": "Available CERMAT tests."
+    },
+    "/results/{resultId}": {
+      "schema": "TestResult",
+      "description": "User test results."
+    }
+  }
+}

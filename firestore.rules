@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - displayName: string
+    //   - stats: map
+    //     - testsTaken: number
+    //     - averageScore: number
+    //     - totalPoints: number
+    //     - lastActive: timestamp
+    //
+    // Collection: tests
+    // Document ID: {testId}
+    // Fields:
+    //   - title: string
+    //   - subject: string (MAT, CJL)
+    //   - year: number
+    //   - term: string
+    //   - durationMinutes: number
+    //   - totalPoints: number
+    //   - questions: list
+    //
+    // Collection: results
+    // Document ID: {resultId}
+    // Fields:
+    //   - testId: string
+    //   - userId: string
+    //   - score: number
+    //   - maxScore: number
+    //   - completedAt: timestamp
+    //   - answers: map
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "zmnichovicjirka@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string &&
+             data.email is string && isValidEmail(data.email);
+    }
+
+    function isValidTest(data) {
+      return data.keys().hasAll(['title', 'subject', 'year', 'questions']) &&
+             data.title is string && data.title.size() < 200 &&
+             data.subject in ['MAT', 'CJL'] &&
+             data.year is number &&
+             data.questions is list;
+    }
+
+    function isValidResult(data) {
+      return data.keys().hasAll(['testId', 'userId', 'score', 'maxScore']) &&
+             data.testId is string &&
+             data.userId is string &&
+             data.score is number &&
+             data.maxScore is number;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /tests/{testId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidTest(request.resource.data);
+    }
+
+    match /results/{resultId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && isValidResult(request.resource.data) && request.auth.uid == request.resource.data.userId;
+      allow update: if isAuthenticated() && isValidResult(request.resource.data) && request.auth.uid == resource.data.userId && request.auth.uid == request.resource.data.userId;
+      allow delete: if isAdmin();
+    }
+  }
+}
